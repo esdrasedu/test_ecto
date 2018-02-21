@@ -2,7 +2,7 @@ defmodule TestEcto.Order do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias TestEcto.User
+  alias TestEcto.{Repo, User}
 
   schema "orders" do
     field :amount, :integer
@@ -11,10 +11,27 @@ defmodule TestEcto.Order do
   end
 
   def changeset(order, params \\ %{}) do
+    user = get_user(params)
     order
     |> cast(params, [:amount])
     |> validate_required([:amount])
-    |> cast_assoc(:user, required: true)
+    |> put_assoc(:user, user, required: true)
   end
 
+  def get_user(%{user: %{id: id}} = params) do
+    user = Repo.get(User, id)
+    params_user = params[:user]
+    params_user
+    |> Map.keys()
+    |> case do
+         [:id] -> user
+         _keys -> user |> User.changeset(params_user)
+       end
+  end
+
+
+  def get_user(%{user: user}) do
+    user
+  end
 end
+
